@@ -1,0 +1,72 @@
+# GRANDE FOUILLE (à lancer une fois) : refait toute l'année avec les
+# nouveaux champs (FL, vitesse, squawk, départ/arrivée) et répare les "?".
+# NOUVEAU fichier à créer : .github/workflows/rebuild.yml
+# À la fin, ram_flights.json est mis à jour tout seul dans le dépôt.
+
+name: Rebuild RAM flights (complet)
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  month:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { s: "2025-08-01", e: "2025-08-31" }
+          - { s: "2025-09-01", e: "2025-09-30" }
+          - { s: "2025-10-01", e: "2025-10-31" }
+          - { s: "2025-11-01", e: "2025-11-30" }
+          - { s: "2025-12-01", e: "2025-12-31" }
+          - { s: "2026-01-01", e: "2026-01-31" }
+          - { s: "2026-02-01", e: "2026-02-28" }
+          - { s: "2026-03-01", e: "2026-03-31" }
+          - { s: "2026-04-01", e: "2026-04-30" }
+          - { s: "2026-05-01", e: "2026-05-31" }
+          - { s: "2026-06-01", e: "2026-06-30" }
+          - { s: "2026-07-01", e: "2026-07-31" }
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fouiller ${{ matrix.s }}
+        run: python3 build_ram_flights.py "${{ matrix.s }}" "${{ matrix.e }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: part-${{ matrix.s }}
+          path: ram_flights.json
+
+  merge:
+    needs: month
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with: { path: parts }
+      - name: Fusion intelligente (les journées enrichies gagnent)
+        run: |
+          python3 - << 'EOF'
+          import json, glob
+
+          def is_v2(day):  # journée au nouveau format ?
+              return bool(day) and all("fl_max" in v for v in day.values())
+
+          total = {}
+          for f in glob.glob('parts/*/ram_flights.json'):
+              for day, flights in json.load(open(f)).items():
+                  if day not in total or (is_v2(flights) and not is_v2(total[day])):
+                      total[day] = flights
+          json.dump(total, open('ram_flights.json', 'w'), sort_keys=True)
+          n_v2 = sum(1 for v in total.values() if is_v2(v))
+          print(len(total), "journées,", n_v2, "au nouveau format")
+          EOF
+      - name: Enregistrer dans le dépôt
+        run: |
+          git config user.name  "robot"
+          git config user.email "robot@users.noreply.github.com"
+          git add ram_flights.json
+          git diff --cached --quiet && echo "Rien de nouveau" || \
+            git commit -m "Reconstruction complète v2 (FL, vitesse, squawk, dep/arr)"
+          git push
