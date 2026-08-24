@@ -1,0 +1,59 @@
+# Robot GitHub gratuit : fabrique ram_flights.json mois par mois, en parallèle.
+# À déposer dans votre dépôt GitHub sous : .github/workflows/build.yml
+# (avec build_ram_flights.py et fleet_RAM.json à la racine du dépôt)
+#
+# Lancement : onglet "Actions" du dépôt -> "Build RAM flights" -> "Run workflow"
+# Chaque mois tourne dans sa propre machine (12 en parallèle) puis tout est
+# fusionné en un seul fichier téléchargeable dans les "Artifacts".
+
+name: Build RAM flights
+on:
+  workflow_dispatch: {}
+
+jobs:
+  month:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { s: "2025-08-01", e: "2025-08-31" }
+          - { s: "2025-09-01", e: "2025-09-30" }
+          - { s: "2025-10-01", e: "2025-10-31" }
+          - { s: "2025-11-01", e: "2025-11-30" }
+          - { s: "2025-12-01", e: "2025-12-31" }
+          - { s: "2026-01-01", e: "2026-01-31" }
+          - { s: "2026-02-01", e: "2026-02-28" }
+          - { s: "2026-03-01", e: "2026-03-31" }
+          - { s: "2026-04-01", e: "2026-04-30" }
+          - { s: "2026-05-01", e: "2026-05-31" }
+          - { s: "2026-06-01", e: "2026-06-30" }
+          - { s: "2026-07-01", e: "2026-07-31" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: python build_ram_flights.py "${{ matrix.s }}" "${{ matrix.e }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: part-${{ matrix.s }}
+          path: ram_flights.json
+
+  merge:
+    needs: month
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: parts }
+      - name: Fusionner les 12 morceaux
+        run: |
+          python - << 'EOF'
+          import json, glob
+          total = {}
+          for f in glob.glob('parts/*/ram_flights.json'):
+              total.update(json.load(open(f)))
+          json.dump(total, open('ram_flights.json','w'), sort_keys=True)
+          print(len(total), "journées fusionnées")
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ram_flights_COMPLET
+          path: ram_flights.json
