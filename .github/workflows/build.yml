@@ -1,10 +1,6 @@
-# Robot GitHub gratuit : fabrique ram_flights.json mois par mois, en parallèle.
-# À déposer dans votre dépôt GitHub sous : .github/workflows/build.yml
-# (avec build_ram_flights.py et fleet_RAM.json à la racine du dépôt)
-#
-# Lancement : onglet "Actions" du dépôt -> "Build RAM flights" -> "Run workflow"
-# Chaque mois tourne dans sa propre machine (12 en parallèle) puis tout est
-# fusionné en un seul fichier téléchargeable dans les "Artifacts".
+# Version 2 : avec vérifications avant démarrage et messages d'erreur clairs.
+# Remplace ENTIÈREMENT le contenu de .github/workflows/build.yml
+# (ouvrir le fichier sur GitHub -> crayon -> tout sélectionner -> coller -> Commit changes)
 
 name: Build RAM flights
 on:
@@ -30,8 +26,25 @@ jobs:
           - { s: "2026-06-01", e: "2026-06-30" }
           - { s: "2026-07-01", e: "2026-07-31" }
     steps:
-      - uses: actions/checkout@v4
-      - run: python build_ram_flights.py "${{ matrix.s }}" "${{ matrix.e }}"
+      - uses: actions/checkout@v5
+
+      - name: Vérifier que les fichiers sont bien là
+        run: |
+          echo "=== Fichiers présents à la racine du dépôt ==="
+          ls -la
+          if [ ! -f build_ram_flights.py ]; then
+            echo "::error::FICHIER MANQUANT : build_ram_flights.py est absent ou mal nommé (vérifiez espaces / majuscules)"
+            exit 1
+          fi
+          if [ ! -f fleet_RAM.json ]; then
+            echo "::error::FICHIER MANQUANT : fleet_RAM.json est absent ou mal nommé (vérifiez espaces / majuscules, le _ et les MAJUSCULES RAM)"
+            exit 1
+          fi
+          python3 -c "import json; d=json.load(open('fleet_RAM.json')); print('fleet_RAM.json OK :', len(d), 'avions')"
+
+      - name: Fouiller le mois ${{ matrix.s }}
+        run: python3 build_ram_flights.py "${{ matrix.s }}" "${{ matrix.e }}"
+
       - uses: actions/upload-artifact@v4
         with:
           name: part-${{ matrix.s }}
@@ -45,7 +58,7 @@ jobs:
         with: { path: parts }
       - name: Fusionner les 12 morceaux
         run: |
-          python - << 'EOF'
+          python3 - << 'EOF'
           import json, glob
           total = {}
           for f in glob.glob('parts/*/ram_flights.json'):
