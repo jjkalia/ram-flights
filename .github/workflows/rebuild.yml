@@ -30,6 +30,7 @@ jobs:
           - { s: "2026-07-01", e: "2026-07-31" }
     steps:
       - uses: actions/checkout@v5
+        with: { fetch-depth: 1 }
       - name: Fouiller ${{ matrix.s }}
         run: python3 build_ram_flights.py "${{ matrix.s }}" "${{ matrix.e }}"
       - uses: actions/upload-artifact@v4
@@ -42,6 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with: { fetch-depth: 1 }
       - uses: actions/download-artifact@v4
         with: { path: parts }
       - name: Fusion (les journées v3 gagnent)
@@ -50,7 +52,7 @@ jobs:
           import json, glob
 
           def is_v4(day):
-              return bool(day) and day.get("_v") in (3, 4)
+              return bool(day) and day.get("_v") == 4
 
           total = {}
           for f in glob.glob('parts/*/ram_flights.json'):
