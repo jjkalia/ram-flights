@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-VERSION 2 — Vols RAM depuis les archives ADSB.lol (licence ODbL).
+VERSION 3 — Vols RAM depuis les archives ADSB.lol (licence ODbL).
 
-Nouveautés :
-- fl_max     : niveau de vol maximum (altitude max / 100)
-- gs_max     : vitesse sol maximum (nœuds)
-- squawk     : code transpondeur le plus utilisé pendant le vol
-- dep / arr  : coordonnées [lat, lon] du premier et dernier point vu
-- immatriculation de secours : si absente de la trace du jour,
-  on la déduit du code hex via fleet_RAM.json (fini les "?")
-- auto-réparation : une journée déjà présente mais à l'ancien format
-  (ou avec des "?") est refaite automatiquement.
+Changement majeur : au lieu de ne regarder que les 64 avions de la table
+de flotte, on scanne TOUS les avions du monde et on garde ceux qui
+émettent un callsign RAM + chiffre (RAM800F oui, RAMP1/RAMBO non).
+=> attrape automatiquement les ATR de RAM Express, les avions loués
+   (wet-lease, ex: A330 CS-TGD) et toute nouvelle livraison, pour toujours.
+
+La table fleet_RAM.json ne sert plus que de secours pour l'immatriculation
+quand elle manque dans la trace du jour.
 
     python3 build_ram_flights.py 2025-08-01 2026-07-31
 """
@@ -21,10 +20,12 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 OUT = HERE / "ram_flights.json"
-FLEET = json.load(open(HERE / "fleet_RAM.json"))
-FLEET_LOW = {k.lower(): v for k, v in FLEET.items()}
-WANTED = {f"./traces/{h[-2:]}/trace_full_{h}.json" for h in FLEET_LOW}
+try:
+    FLEET_LOW = {k.lower(): v for k, v in json.load(open(HERE / "fleet_RAM.json")).items()}
+except FileNotFoundError:
+    FLEET_LOW = {}
 
+VERSION = 3
 BASE = ("https://github.com/adsblol/globe_history_{y}/releases/download/"
         "v{y}.{m:02d}.{d:02d}-planes-readsb-prod-0/"
         "v{y}.{m:02d}.{d:02d}-planes-readsb-prod-0.tar.{part}")
@@ -32,9 +33,9 @@ BASE = ("https://github.com/adsblol/globe_history_{y}/releases/download/"
 
 def stream(day):
     for part in ("aa", "ab", "ac", "ad"):
-        url = BASE.format(y=day.year, m=day.month, d=day.day, part=part)
         try:
-            r = urllib.request.urlopen(url, timeout=60)
+            r = urllib.request.urlopen(
+                BASE.format(y=day.year, m=day.month, d=day.day, part=part), timeout=90)
         except urllib.error.HTTPError:
             return
         while chunk := r.read(1 << 20):
@@ -51,31 +52,48 @@ class Reader(io.RawIOBase):
         n = min(len(out), len(s.b)); out[:n], s.b = s.b[:n], s.b[n:]; return n
 
 
+def is_ram(cs):
+    # RAM + chiffre (vols normaux, charters, mises en place numérotées)
+    if cs.startswith("RAM") and len(cs) > 3 and cs[3].isdigit():
+        return True
+    # immatriculation marocaine émise comme callsign (convoyages) : CNRGC, CN-RGC…
+    c = cs.replace("-", "")
+    return c.startswith("CN") and 4 <= len(c) <= 6
+
+
 def one_day(day):
-    flights, remaining = {}, set(WANTED)
+    flights = {}
     try:
         tar = tarfile.open(fileobj=io.BufferedReader(Reader(stream(day)), 1 << 22), mode="r|")
     except tarfile.ReadError:
         return None  # archive absente
+    got_data = False
     for m in tar:
-        if m.name not in remaining:
+        if not (m.name.startswith("./traces/") and m.isfile()):
             continue
-        remaining.discard(m.name)
-        raw = tar.extractfile(m).read()
-        try: d = json.loads(gzip.decompress(raw))
-        except gzip.BadGzipFile: d = json.loads(raw)
+        f = tar.extractfile(m)
+        if f is None:
+            continue
+        raw = f.read()
+        got_data = True
+        try:
+            data = gzip.decompress(raw)
+        except Exception:
+            data = raw
+        if b'"flight":"RAM' not in data and b'"flight":"CN' not in data:
+            continue   # tri rapide avant parsing
+        d = json.loads(data)
         hexc = d.get("icao", "").lower()
-        finfo = FLEET_LOW.get(hexc, ["?", "?"])
-        reg = d.get("r") or finfo[0]          # secours via table flotte
-        typ = d.get("t") or finfo[1]
+        finfo = FLEET_LOW.get(hexc, [None, None])
+        reg = d.get("r") or finfo[0] or hexc.upper()
+        typ = d.get("t") or finfo[1] or "?"
         base = d.get("timestamp", 0)
-        # agrégats par callsign
         agg = {}
         for p in d.get("trace", []):
             if not (len(p) > 8 and isinstance(p[8], dict) and p[8].get("flight")):
                 continue
             cs = p[8]["flight"].strip()
-            if not cs.startswith("RAM"):
+            if not is_ram(cs):
                 continue
             a = agg.setdefault(cs, {"ts": [], "alt": [], "gs": [],
                                     "sq": Counter(), "pts": []})
@@ -89,7 +107,7 @@ def one_day(day):
         for cs, a in agg.items():
             first = min(a["pts"]) if a["pts"] else None
             last = max(a["pts"]) if a["pts"] else None
-            flights[cs] = {
+            rec = {
                 "reg": reg, "type": typ,
                 "from_utc": fmt(min(a["ts"])), "to_utc": fmt(max(a["ts"])),
                 "fl_max": round(max(a["alt"]) / 100) if a["alt"] else None,
@@ -98,19 +116,18 @@ def one_day(day):
                 "dep": [round(first[1], 3), round(first[2], 3)] if first else None,
                 "arr": [round(last[1], 3), round(last[2], 3)] if last else None,
             }
-        if not remaining:
-            break
+            # si le même callsign apparaît sur 2 avions (rare), garder le plus long
+            old = flights.get(cs)
+            if old is None or (rec["to_utc"] > rec["from_utc"]):
+                flights[cs] = rec
+    if not got_data:
+        return None
+    flights["_v"] = VERSION   # marqueur de version de la journée
     return flights
 
 
 def needs_redo(day_data):
-    """Vrai si la journée est vide, à l'ancien format, ou contient des '?'."""
-    if not day_data:
-        return True
-    for v in day_data.values():
-        if "fl_max" not in v or v.get("reg") in (None, "?"):
-            return True
-    return False
+    return not day_data or day_data.get("_v") != VERSION
 
 
 def main(start, end):
@@ -122,7 +139,8 @@ def main(start, end):
             print(f"{key} …", flush=True)
             res = one_day(day)
             data[key] = res if res is not None else {}
-            print(f"  {'archive absente' if res is None else str(len(res)) + ' vols'}")
+            n = (len(res) - 1) if res else 0
+            print(f"  {'archive absente' if res is None else str(n) + ' vols'}")
             json.dump(data, open(OUT, "w"), sort_keys=True)
         day += timedelta(days=1)
     print(f"Terminé -> {OUT} ({OUT.stat().st_size/1e6:.1f} Mo)")
