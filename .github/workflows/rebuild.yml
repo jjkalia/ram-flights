@@ -49,16 +49,16 @@ jobs:
           python3 - << 'EOF'
           import json, glob
 
-          def is_v3(day):
-              return bool(day) and day.get("_v") == 3
+          def is_v4(day):
+              return bool(day) and day.get("_v") in (3, 4)
 
           total = {}
           for f in glob.glob('parts/*/ram_flights.json'):
               for day, flights in json.load(open(f)).items():
-                  if day not in total or (is_v3(flights) and not is_v3(total[day])):
+                  if day not in total or (is_v4(flights) and not is_v4(total[day])):
                       total[day] = flights
           json.dump(total, open('ram_flights.json', 'w'), sort_keys=True)
-          print(len(total), "journées,", sum(1 for v in total.values() if is_v3(v)), "en v3")
+          print(len(total), "journées,", sum(1 for v in total.values() if is_v4(v)), "en v4")
           EOF
       - name: Enregistrer dans le dépôt
         run: |
@@ -66,5 +66,5 @@ jobs:
           git config user.email "robot@users.noreply.github.com"
           git add ram_flights.json
           git diff --cached --quiet && echo "Rien de nouveau" || \
-            git commit -m "Reconstruction v3 : tous les avions à callsign RAM"
+            git commit -m "Nettoyage v4 : filtre famille RAM"
           git push
