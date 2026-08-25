@@ -1,7 +1,6 @@
-# GRANDE FOUILLE (à lancer une fois) : refait toute l'année avec les
-# nouveaux champs (FL, vitesse, squawk, départ/arrivée) et répare les "?".
-# NOUVEAU fichier à créer : .github/workflows/rebuild.yml
-# À la fin, ram_flights.json est mis à jour tout seul dans le dépôt.
+# GRANDE FOUILLE v3 : attrape tout avion émettant un callsign RAM
+# (ATR de RAM Express, avions loués, nouvelles livraisons).
+# Remplace ENTIÈREMENT le contenu de .github/workflows/rebuild.yml
 
 name: Rebuild RAM flights (complet)
 on:
@@ -45,22 +44,21 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with: { path: parts }
-      - name: Fusion intelligente (les journées enrichies gagnent)
+      - name: Fusion (les journées v3 gagnent)
         run: |
           python3 - << 'EOF'
           import json, glob
 
-          def is_v2(day):  # journée au nouveau format ?
-              return bool(day) and all("fl_max" in v for v in day.values())
+          def is_v3(day):
+              return bool(day) and day.get("_v") == 3
 
           total = {}
           for f in glob.glob('parts/*/ram_flights.json'):
               for day, flights in json.load(open(f)).items():
-                  if day not in total or (is_v2(flights) and not is_v2(total[day])):
+                  if day not in total or (is_v3(flights) and not is_v3(total[day])):
                       total[day] = flights
           json.dump(total, open('ram_flights.json', 'w'), sort_keys=True)
-          n_v2 = sum(1 for v in total.values() if is_v2(v))
-          print(len(total), "journées,", n_v2, "au nouveau format")
+          print(len(total), "journées,", sum(1 for v in total.values() if is_v3(v)), "en v3")
           EOF
       - name: Enregistrer dans le dépôt
         run: |
@@ -68,5 +66,5 @@ jobs:
           git config user.email "robot@users.noreply.github.com"
           git add ram_flights.json
           git diff --cached --quiet && echo "Rien de nouveau" || \
-            git commit -m "Reconstruction complète v2 (FL, vitesse, squawk, dep/arr)"
+            git commit -m "Reconstruction v3 : tous les avions à callsign RAM"
           git push
