@@ -1,0 +1,48 @@
+# Jauge à crédits OpenSky : affiche le solde réel restant (coût ~1 crédit).
+# NOUVEAU fichier à créer : .github/workflows/credits.yml
+# Utilisation : Actions -> "Crédits OpenSky restants" -> Run workflow
+# Le solde s'affiche dans le journal de l'étape.
+
+name: Crédits OpenSky restants
+on:
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interroger la jauge
+        env:
+          OPENSKY_CLIENT_ID: ${{ secrets.OPENSKY_CLIENT_ID }}
+          OPENSKY_CLIENT_SECRET: ${{ secrets.OPENSKY_CLIENT_SECRET }}
+        run: |
+          python3 - << 'EOF'
+          import json, os, urllib.request, urllib.parse, urllib.error
+
+          # 1) jeton
+          data = urllib.parse.urlencode({
+              "grant_type": "client_credentials",
+              "client_id": os.environ["OPENSKY_CLIENT_ID"],
+              "client_secret": os.environ["OPENSKY_CLIENT_SECRET"],
+          }).encode()
+          tok = json.load(urllib.request.urlopen(urllib.request.Request(
+              "https://auth.opensky-network.org/auth/realms/opensky-network/"
+              "protocol/openid-connect/token", data=data), timeout=30))["access_token"]
+
+          # 2) requête minuscule : états au-dessus d'un petit carré (~1 crédit)
+          url = ("https://opensky-network.org/api/states/all"
+                 "?lamin=33.3&lamax=33.6&lomin=-7.8&lomax=-7.4")  # Casablanca
+          req = urllib.request.Request(url, headers={"Authorization": f"Bearer {tok}"})
+          try:
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  rem = r.headers.get("X-Rate-Limit-Remaining", "non communiqué")
+                  print(f"==> CREDITS OPENSKY RESTANTS AUJOURD'HUI : {rem} / 4000")
+          except urllib.error.HTTPError as e:
+              if e.code == 429:
+                  wait = e.headers.get("X-Rate-Limit-Retry-After-Seconds", "?")
+                  h = int(wait) // 3600 if str(wait).isdigit() else "?"
+                  print(f"==> QUOTA EPUISE (0 restant). "
+                        f"Reinitialisation dans ~{h} h.")
+              else:
+                  print(f"==> Erreur HTTP {e.code}")
+          EOF
