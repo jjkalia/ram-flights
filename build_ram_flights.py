@@ -32,14 +32,35 @@ BASE = ("https://github.com/adsblol/globe_history_{y}/releases/download/"
 
 
 def stream(day):
+    import time
     for part in ("aa", "ab", "ac", "ad"):
-        try:
-            r = urllib.request.urlopen(
-                BASE.format(y=day.year, m=day.month, d=day.day, part=part), timeout=90)
-        except urllib.error.HTTPError:
-            return
-        while chunk := r.read(1 << 20):
-            yield chunk
+        url = BASE.format(y=day.year, m=day.month, d=day.day, part=part)
+        offset, attempts = 0, 0
+        while True:
+            try:
+                req = urllib.request.Request(url)
+                if offset:
+                    req.add_header("Range", f"bytes={offset}-")
+                r = urllib.request.urlopen(req, timeout=90)
+                skip = offset if (offset and r.status == 200) else 0
+                while chunk := r.read(1 << 20):
+                    if skip:
+                        drop = min(skip, len(chunk))
+                        chunk, skip = chunk[drop:], skip - drop
+                        if not chunk:
+                            continue
+                    offset += len(chunk)
+                    yield chunk
+                break  # partie terminée, passer à la suivante
+            except urllib.error.HTTPError as e:
+                if e.code in (404, 416):
+                    return  # plus de parties
+                attempts += 1
+            except Exception:
+                attempts += 1  # coupure réseau : on réessaie au même octet
+            if attempts >= 5:
+                raise RuntimeError(f"réseau instable sur {url}")
+            time.sleep(5 * attempts)
 
 
 class Reader(io.RawIOBase):
@@ -137,7 +158,17 @@ def main(start, end):
         key = day.isoformat()
         if key not in data or needs_redo(data[key]):
             print(f"{key} …", flush=True)
-            res = one_day(day)
+            res = None
+            for attempt in (1, 2):
+                try:
+                    res = one_day(day)
+                    break
+                except Exception as e:
+                    print(f"  tentative {attempt} échouée ({e})", flush=True)
+            else:
+                print("  journée sautée, sera reprise au prochain lancement")
+                day += timedelta(days=1)
+                continue
             data[key] = res if res is not None else {}
             n = (len(res) - 1) if res else 0
             print(f"  {'archive absente' if res is None else str(n) + ' vols'}")
