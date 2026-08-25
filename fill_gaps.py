@@ -17,7 +17,7 @@ OUT = HERE / "ram_flights.json"
 FLEET = {k.lower(): v for k, v in json.load(open(HERE / "fleet_RAM.json")).items()}
 TOKEN_URL = ("https://auth.opensky-network.org/auth/realms/opensky-network/"
              "protocol/openid-connect/token")
-API = "https://opensky-network.org/api/flights/all"
+API = "https://opensky-network.org/api/flights/aircraft"
 GAPS = ["2025-12-25", "2025-12-31", "2026-05-05", "2026-05-06",
         "2026-05-07", "2026-06-11"]
 MAX_RETRY_PER_CALL = 3
@@ -82,25 +82,26 @@ def main():
         if data.get(day) and data[day].get("_src") == "opensky":
             log(f"{day}: déjà bouché, on saute")
             continue
-        log(f"{day}: interrogation en 12 tranches de 2 h…")
+        log(f"{day}: interrogation avion par avion ({len(FLEET)} appareils)…")
         d0 = int(datetime.fromisoformat(day + "T00:00:00+00:00").timestamp())
+        d1 = d0 + 86400
         found = {}
-        for h in range(0, 24, 2):
-            b, e = d0 + h * 3600, d0 + (h + 2) * 3600
-            res = call(f"{API}?begin={b}&end={e}", token)
+        hard_429 = 0
+        for i, (hexc, info) in enumerate(sorted(FLEET.items()), 1):
+            res = call(f"{API}?icao24={hexc}&begin={d0}&end={d1}", token)
             low_credits = isinstance(res, tuple) and res[0] == "LOW_CREDITS"
             if low_credits:
                 res = res[1]
             if res is None:
                 gave_up += 1
-                log(f"  tranche {h:02d}h-{h+2:02d}h abandonnée")
+                hard_429 += 1
+                if hard_429 >= 3 and not found:
+                    log("  DIAGNOSTIC : cet endpoint semble lui aussi restreint "
+                        "pour les comptes Standard. Arrêt propre — il faudra "
+                        "une autre voie (accès Trino ou saisie manuelle).")
+                    sys.exit(0)
                 continue
-            n_ram = 0
             for f in res:
-                hexc = (f.get("icao24") or "").lower()
-                if hexc not in FLEET:
-                    continue
-                info = FLEET[hexc]
                 cs = (f.get("callsign") or "").strip() or info[0]
                 rec = {
                     "reg": info[0], "type": info[1],
@@ -110,17 +111,16 @@ def main():
                     "dep_apt": f.get("estDepartureAirport"),
                     "arr_apt": f.get("estArrivalAirport"),
                 }
-                old = found.get(cs)
-                if old is None or rec["from_utc"] < old["from_utc"]:
-                    found.setdefault(cs, rec)
-                n_ram += 1
-            log(f"  tranche {h:02d}h-{h+2:02d}h : {len(res)} vols monde, "
-                f"{n_ram} RAM")
+                prev = found.get(cs)
+                if prev is None or rec["from_utc"] < prev["from_utc"]:
+                    found[cs] = rec
+            if res:
+                log(f"  [{i}/{len(FLEET)}] {info[0]} : {len(res)} vol(s)")
             if low_credits:
                 found["_v"] = 4
                 json.dump(data | {day: found}, open(OUT, "w"), sort_keys=True)
                 sys.exit(0)
-            time.sleep(1)
+            time.sleep(0.5)
         found["_v"] = 4
         found["_src"] = "opensky"
         data[day] = found
