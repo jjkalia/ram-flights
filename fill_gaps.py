@@ -48,6 +48,11 @@ def call(url, token):
                 return []          # aucun vol sur la tranche
             wait = int(e.headers.get("X-Rate-Limit-Retry-After-Seconds", 30)) \
                    if e.code == 429 else 10
+            if wait > 300:         # quota JOURNALIER épuisé : inutile d'insister
+                log(f"    HTTP 429 : quota quotidien OpenSky épuisé "
+                    f"(réinitialisation dans ~{wait//3600}h). "
+                    f"Relancez le workflow demain — il reprendra tout seul.")
+                sys.exit(0)
             log(f"    HTTP {e.code} (essai {attempt}/{MAX_RETRY_PER_CALL}), "
                 f"attente {wait}s")
             if attempt == MAX_RETRY_PER_CALL:
