@@ -42,6 +42,14 @@ def call(url, token):
         try:
             req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
             with urllib.request.urlopen(req, timeout=45) as r:
+                remaining = r.headers.get("X-Rate-Limit-Remaining")
+                if remaining is not None:
+                    log(f"    [crédits OpenSky restants : {remaining}]")
+                    if remaining.isdigit() and int(remaining) < 100:
+                        log("    Presque à sec : arrêt propre pour garder une "
+                            "marge. Relancez demain, le script reprendra seul.")
+                        result = json.load(r)
+                        return ("LOW_CREDITS", result)
                 return json.load(r)
         except urllib.error.HTTPError as e:
             if e.code == 404:
@@ -80,6 +88,9 @@ def main():
         for h in range(0, 24, 2):
             b, e = d0 + h * 3600, d0 + (h + 2) * 3600
             res = call(f"{API}?begin={b}&end={e}", token)
+            low_credits = isinstance(res, tuple) and res[0] == "LOW_CREDITS"
+            if low_credits:
+                res = res[1]
             if res is None:
                 gave_up += 1
                 log(f"  tranche {h:02d}h-{h+2:02d}h abandonnée")
@@ -105,6 +116,10 @@ def main():
                 n_ram += 1
             log(f"  tranche {h:02d}h-{h+2:02d}h : {len(res)} vols monde, "
                 f"{n_ram} RAM")
+            if low_credits:
+                found["_v"] = 4
+                json.dump(data | {day: found}, open(OUT, "w"), sort_keys=True)
+                sys.exit(0)
             time.sleep(1)
         found["_v"] = 4
         found["_src"] = "opensky"
