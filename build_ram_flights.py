@@ -25,7 +25,29 @@ try:
 except FileNotFoundError:
     FLEET_LOW = {}
 
-VERSION = 3
+VERSION = 4
+
+
+def is_ram_reg(reg):
+    """Immatriculation de la famille RAM : CN-R.. (RAM), CN-CO.. (Express),
+    CN-MAX/MAY, ou avion étranger (loué) — exclut hélicos/écoles CN-BZ, CN-PL…"""
+    r = str(reg).upper().replace("-", "")
+    return r.startswith(("CNR", "CNCO", "CNMA"))
+
+
+def keep_entry(cs, reg):
+    if cs.startswith("RAM"):
+        return True            # callsign RAM : on garde (y compris avion loué)
+    return is_ram_reg(reg)     # callsign immat : seulement la famille RAM
+
+
+def clean_v3(day_data):
+    """Migration v3 -> v4 sans re-téléchargement : retire le bruit."""
+    out = {k: v for k, v in day_data.items()
+           if k != "_v" and keep_entry(k, v.get("reg", ""))}
+    out["_v"] = VERSION
+    return out
+
 BASE = ("https://github.com/adsblol/globe_history_{y}/releases/download/"
         "v{y}.{m:02d}.{d:02d}-planes-readsb-prod-0/"
         "v{y}.{m:02d}.{d:02d}-planes-readsb-prod-0.tar.{part}")
@@ -126,6 +148,8 @@ def one_day(day):
             if isinstance(p[1], (int, float)): a["pts"].append((ts, p[1], p[2]))
         fmt = lambda t: datetime.fromtimestamp(t, timezone.utc).strftime("%H:%M")
         for cs, a in agg.items():
+            if not keep_entry(cs, reg):
+                continue
             first = min(a["pts"]) if a["pts"] else None
             last = max(a["pts"]) if a["pts"] else None
             rec = {
@@ -156,7 +180,10 @@ def main(start, end):
     day, end = date.fromisoformat(start), date.fromisoformat(end)
     while day <= end:
         key = day.isoformat()
-        if key not in data or needs_redo(data[key]):
+        if key in data and isinstance(data[key], dict) and data[key].get("_v") == 3:
+            data[key] = clean_v3(data[key])          # migration rapide v3 -> v4
+            json.dump(data, open(OUT, "w"), sort_keys=True)
+        elif key not in data or needs_redo(data[key]):
             print(f"{key} …", flush=True)
             res = None
             for attempt in (1, 2):
