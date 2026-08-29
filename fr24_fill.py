@@ -28,6 +28,7 @@ def call(params):
         "Authorization": f"Bearer {TOKEN}",
         "Accept": "application/json",
         "Accept-Version": "v1",
+        "User-Agent": "ram-roster-app/1.0",
     })
     for attempt in (1, 2, 3):
         try:
