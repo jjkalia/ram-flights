@@ -17,7 +17,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 OUT = HERE / "ram_flights.json"
-API = "https://fr24api.flightradar24.com/api/flight-summary/full"
+API = "https://fr24api.flightradar24.com/api/flight-summary/light"
 TOKEN = os.environ["FR24_API_TOKEN"]
 log = lambda *a: print(*a, flush=True)
 
@@ -78,8 +78,6 @@ def one_day(day_iso):
             "dep": None, "arr": None,
             "dep_apt": f.get("orig_icao"), "arr_apt": f.get("dest_icao"),
             "flight_no": num or None,
-            "dist_gc_km": round(f["circle_distance"]/1000) if f.get("circle_distance") else None,
-            "dist_km": round(f["actual_distance"]/1000) if f.get("actual_distance") else None,
             "src": "fr24",
         }
         prev = found.get(cs)
@@ -106,8 +104,7 @@ def main(start, end):
                 # vol déjà connu (ADSB.lol) : on COMPLETE ses champs manquants
                 # (distances, aéroports, n° de vol) sans toucher au reste
                 e = existing[cs]
-                for champ in ("dist_km", "dist_gc_km", "dep_apt",
-                              "arr_apt", "flight_no"):
+                for champ in ("dep_apt", "arr_apt", "flight_no"):
                     if e.get(champ) in (None, "") and rec.get(champ) is not None:
                         e[champ] = rec[champ]
                         enriched = 1 if enriched == 0 else enriched
@@ -119,10 +116,8 @@ def main(start, end):
         data[key] = existing
         json.dump(data, open(OUT, "w"), sort_keys=True)
         n_day = len([k for k in existing if not k.startswith("_")])
-        n_dist = sum(1 for k, v in existing.items()
-                     if not k.startswith("_") and v.get("dist_km"))
-        log(f"{key}: {len(fr24)} vols FR24, {added} ajoutés, "
-            f"{n_dist}/{n_day} avec distance")
+        log(f"{key}: {len(fr24)} vols FR24, {added} ajoutés "
+            f"(journée: {n_day} vols)")
         total_added += added
         day += timedelta(days=1)
         time.sleep(1)
