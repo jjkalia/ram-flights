@@ -95,24 +95,34 @@ def main(start, end):
     while day <= end:
         key = day.isoformat()
         existing = data.get(key) or {}
-        if existing.get("_fr24"):
+        if existing.get("_fr24") == 2:
             log(f"{key}: déjà enrichie FR24, sautée (0 crédit)")
             day += timedelta(days=1)
             continue
         fr24 = one_day(key)
-        added = 0
+        added = enriched = 0
         for cs, rec in fr24.items():
-            if cs in existing:      # ADSB.lol déjà là (plus riche) : on garde
+            if cs in existing:
+                # vol déjà connu (ADSB.lol) : on COMPLETE ses champs manquants
+                # (distances, aéroports, n° de vol) sans toucher au reste
+                e = existing[cs]
+                for champ in ("dist_km", "dist_gc_km", "dep_apt",
+                              "arr_apt", "flight_no"):
+                    if e.get(champ) in (None, "") and rec.get(champ) is not None:
+                        e[champ] = rec[champ]
+                        enriched = 1 if enriched == 0 else enriched
                 continue
             existing[cs] = rec
             added += 1
         existing["_v"] = 4
-        existing["_fr24"] = True
+        existing["_fr24"] = 2   # 2 = enrichie en FULL (distances)
         data[key] = existing
         json.dump(data, open(OUT, "w"), sort_keys=True)
         n_day = len([k for k in existing if not k.startswith("_")])
-        log(f"{key}: {len(fr24)} vols FR24, {added} ajoutés "
-            f"(journée: {n_day} vols au total)")
+        n_dist = sum(1 for k, v in existing.items()
+                     if not k.startswith("_") and v.get("dist_km"))
+        log(f"{key}: {len(fr24)} vols FR24, {added} ajoutés, "
+            f"{n_dist}/{n_day} avec distance")
         total_added += added
         day += timedelta(days=1)
         time.sleep(1)
