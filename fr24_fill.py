@@ -17,7 +17,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 OUT = HERE / "ram_flights.json"
-API = "https://fr24api.flightradar24.com/api/flight-summary/light"
+API = "https://fr24api.flightradar24.com/api/flight-summary/full"
 TOKEN = os.environ["FR24_API_TOKEN"]
 log = lambda *a: print(*a, flush=True)
 
@@ -78,6 +78,8 @@ def one_day(day_iso):
             "dep": None, "arr": None,
             "dep_apt": f.get("orig_icao"), "arr_apt": f.get("dest_icao"),
             "flight_no": num or None,
+            "dist_gc_km": round(f["circle_distance"]/1000) if f.get("circle_distance") else None,
+            "dist_km": round(f["actual_distance"]/1000) if f.get("actual_distance") else None,
             "src": "fr24",
         }
         prev = found.get(cs)
@@ -93,6 +95,10 @@ def main(start, end):
     while day <= end:
         key = day.isoformat()
         existing = data.get(key) or {}
+        if existing.get("_fr24"):
+            log(f"{key}: déjà enrichie FR24, sautée (0 crédit)")
+            day += timedelta(days=1)
+            continue
         fr24 = one_day(key)
         added = 0
         for cs, rec in fr24.items():
@@ -100,10 +106,10 @@ def main(start, end):
                 continue
             existing[cs] = rec
             added += 1
-        if added or not data.get(key):
-            existing["_v"] = 4
-            data[key] = existing
-            json.dump(data, open(OUT, "w"), sort_keys=True)
+        existing["_v"] = 4
+        existing["_fr24"] = True
+        data[key] = existing
+        json.dump(data, open(OUT, "w"), sort_keys=True)
         n_day = len([k for k in existing if not k.startswith("_")])
         log(f"{key}: {len(fr24)} vols FR24, {added} ajoutés "
             f"(journée: {n_day} vols au total)")
