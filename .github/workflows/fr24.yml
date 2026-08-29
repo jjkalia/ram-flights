@@ -1,0 +1,40 @@
+# Enrichissement FR24 : bouche les journées vides et repêche les vols
+# ratés par les récepteurs communautaires (Afrique…).
+# NOUVEAU fichier : .github/workflows/fr24.yml
+# Prérequis : secret FR24_API_TOKEN
+# (Settings -> Secrets and variables -> Actions -> New repository secret)
+
+name: Enrichissement FR24
+on:
+  workflow_dispatch:
+    inputs:
+      debut:
+        description: "Première date (AAAA-MM-JJ)"
+        required: true
+        default: "2025-12-25"
+      fin:
+        description: "Dernière date (AAAA-MM-JJ)"
+        required: true
+        default: "2025-12-25"
+
+permissions:
+  contents: write
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 1 }
+      - name: Interroger FR24
+        env:
+          FR24_API_TOKEN: ${{ secrets.FR24_API_TOKEN }}
+        run: python3 fr24_fill.py "${{ inputs.debut }}" "${{ inputs.fin }}"
+      - name: Enregistrer dans le dépôt
+        run: |
+          git config user.name  "robot"
+          git config user.email "robot@users.noreply.github.com"
+          git add ram_flights.json
+          git diff --cached --quiet && echo "Rien de nouveau" || \
+            git commit -m "Enrichissement FR24 ${{ inputs.debut }} -> ${{ inputs.fin }}"
+          git push
