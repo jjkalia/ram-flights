@@ -1,66 +1,440 @@
 {
- "020057": ["CN-RNZ", "B738", "00", "BOEING 737-800"],
- "020058": ["CN-ROA", "B738", "00", "BOEING 737-800"],
- "02005A": ["CN-ROB", "B738", "00", "BOEING 737-800"],
- "02005B": ["CN-ROC", "B738", "00", "BOEING 737-800"],
- "020066": ["CN-ROE", "B738", "00", "BOEING 737-800"],
- "02006E": ["CN-ROJ", "B738", "00", "BOEING 737-800"],
- "02006F": ["CN-ROH", "B738", "00", "BOEING 737-800"],
- "020072": ["CN-ROL", "B738", "00", "BOEING 737-800"],
- "020073": ["CN-ROK", "B738", "00", "BOEING 737-800"],
- "02007A": ["CN-ROP", "B738", "00", "BOEING 737-800"],
- "02007D": ["CN-ROR", "B738", "00", "BOEING 737-800"],
- "02008B": ["CN-ROS", "B738", "00", "BOEING 737-800"],
- "020092": ["CN-ROT", "B738", "00", "BOEING 737-800"],
- "020095": ["CN-ROU", "B738", "00", "BOEING 737-800"],
- "02009F": ["CN-ROW", "B763", "00", "BOEING 767-300"],
- "0200AE": ["CN-ROY", "B738", "00", "BOEING 737-800"],
- "0200AF": ["CN-ROZ", "B738", "00", "BOEING 737-800"],
- "0200CA": ["CN-RGC", "B788", "00", "BOEING 787-8 Dreamliner"],
- "0200CB": ["CN-RGB", "B788", "00", "BOEING 787-8 Dreamliner"],
- "0200EA": ["CN-RGG", "B738", "00", "BOEING 737-800"],
- "0200EB": ["CN-RGF", "B738", "00", "BOEING 737-800"],
- "0200EC": ["CN-RGI", "B738", "00", "BOEING 737-800"],
- "0200ED": ["CN-RGH", "B738", "00", "BOEING 737-800"],
- "0200EF": ["CN-RGE", "B738", "00", "BOEING 737-800"],
- "0200F8": ["CN-RGJ", "B738", "00", "BOEING 737-800"],
- "0200FB": ["CN-RGK", "B738", "00", "BOEING 737-800"],
- "020104": ["CN-RGM", "B738", "00", "BOEING 737-800"],
- "020105": ["CN-RGN", "B738", "00", "BOEING 737-800"],
- "020110": ["CN-RGO", "E190", "00", "EMBRAER ERJ-190-100"],
- "020111": ["CN-RGP", "E190", "00", "EMBRAER ERJ-190-100"],
- "020112": ["CN-RGQ", "E190", "00", "EMBRAER ERJ-190-100"],
- "020113": ["CN-RGR", "E190", "00", "EMBRAER ERJ-190-100"],
- "020121": ["CN-RGS", "B788", "00", "BOEING 787-8 Dreamliner"],
- "020122": ["CN-RGT", "B788", "00", "BOEING 787-8 Dreamliner"],
- "020123": ["CN-RGU", "B788", "00", "BOEING 787-8 Dreamliner"],
- "02012C": ["CN-RGV", "B738", "00", "BOEING 737-800"],
- "020139": ["CN-MAX", "B38M", "00", "BOEING 737 MAX 8"],
- "02013A": ["CN-MAY", "B38M", "00", "BOEING 737 MAX 8"],
- "02013C": ["CN-RAM", "B789", "00", "BOEING 787-9 Dreamliner"],
- "02013D": ["CN-RGX", "B789", "00", "BOEING 787-9 Dreamliner"],
- "02013E": ["CN-RGZ", "B789", "00", "BOEING 787-9 Dreamliner"],
- "02013F": ["CN-RGY", "B789", "00", "BOEING 787-9 Dreamliner"],
- "02019B": ["CN-RGW", "B738", "00", "BOEING 737-800"],
- "02019F": ["CN-RHD", "B38M", "00", "BOEING 737 MAX 8"],
- "0201A0": ["CN-RHF", "B38M", "00", "BOEING 737 MAX 8"],
- "0201A1": ["CN-RHC", "B38M", "00", "BOEING 737 MAX 8"],
- "0201A2": ["CN-RHE", "B38M", "00", "BOEING 737 MAX 8"],
- "0201A3": ["CN-RHA", "B789", "00", "BOEING 787-9 Dreamliner"],
- "0201A4": ["CN-RHB", "B789", "00", "BOEING 787-9 Dreamliner"],
- "0201B5": ["CN-RHG", "B38M", "00", "BOEING 737 MAX 8"],
- "0201B6": ["CN-RHH", "B38M", "00", "BOEING 737 MAX 8"],
- "0201C0": ["CN-RHI", "B38M", "00", "BOEING 737 MAX 8"],
- "0201C1": ["CN-RHJ", "B38M", "00", "BOEING 737 MAX 8"],
- "0201C2": ["CN-RHK", "B38M", "00", "BOEING 737 MAX 8"],
- "0201C3": ["CN-RHL", "B38M", "00", "BOEING 737 MAX 8"],
- "0201C4": ["CN-RHM", "B38M", "00", "BOEING 737 MAX 8"],
- "0201C5": ["CN-RHN", "B38M", "00", "BOEING 737 MAX 8"],
- "0201CD": ["CN-RHU", "B788", "00", "BOEING 787-8 Dreamliner"],
- "0201CE": ["CN-RHV", "B788", "00", "BOEING 787-8 Dreamliner"],
- "0201D1": ["CN-RHO", "B38M", "00", "BOEING 737 MAX 8"],
- "0201D2": ["CN-RHP", "B38M", "00", "BOEING 737 MAX 8"],
- "0201D3": ["CN-RHQ", "B38M", "00", "BOEING 737 MAX 8"],
- "0201D4": ["CN-RHR", "B38M", "00", "BOEING 737 MAX 8"],
- "0201D5": ["CN-RHS", "B38M", "00", null]
+ "020025": [
+  "CN-RNP",
+  "B738",
+  "00",
+  "BOEING 737-8B6"
+ ],
+ "020035": [
+  "CN-AOE",
+  "AT76",
+  "00",
+  "ATR (etiquete C130 dans les bases publiques, a verifier)"
+ ],
+ "020044": [
+  "CN-RNU",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020057": [
+  "CN-RNZ",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020058": [
+  "CN-ROA",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02005A": [
+  "CN-ROB",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02005B": [
+  "CN-ROC",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020066": [
+  "CN-ROE",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02006E": [
+  "CN-ROJ",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02006F": [
+  "CN-ROH",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020072": [
+  "CN-ROL",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020073": [
+  "CN-ROK",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02007A": [
+  "CN-ROP",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02007D": [
+  "CN-ROR",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02008B": [
+  "CN-ROS",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020092": [
+  "CN-ROT",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020095": [
+  "CN-ROU",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02009F": [
+  "CN-ROW",
+  "B763",
+  "00",
+  "BOEING 767-300"
+ ],
+ "0200AE": [
+  "CN-ROY",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "0200AF": [
+  "CN-ROZ",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "0200CA": [
+  "CN-RGC",
+  "B788",
+  "00",
+  "BOEING 787-8 Dreamliner"
+ ],
+ "0200CB": [
+  "CN-RGB",
+  "B788",
+  "00",
+  "BOEING 787-8 Dreamliner"
+ ],
+ "0200EA": [
+  "CN-RGG",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "0200EB": [
+  "CN-RGF",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "0200EC": [
+  "CN-RGI",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "0200ED": [
+  "CN-RGH",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "0200EF": [
+  "CN-RGE",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "0200F2": [
+  "CN-COE",
+  "AT72",
+  "00",
+  "ATR 72-500 (RAM Express)"
+ ],
+ "0200F5": [
+  "CN-COF",
+  "AT76",
+  "00",
+  "ATR 72-600 (RAM Express)"
+ ],
+ "0200F8": [
+  "CN-RGJ",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "0200FB": [
+  "CN-RGK",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020100": [
+  "CN-COH",
+  "AT76",
+  "00",
+  "ATR 72-600 (RAM Express)"
+ ],
+ "020101": [
+  "CN-COG",
+  "AT76",
+  "00",
+  "ATR 72-600 (RAM Express)"
+ ],
+ "020104": [
+  "CN-RGM",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020105": [
+  "CN-RGN",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02010E": [
+  "CN-COI",
+  "AT76",
+  "00",
+  "ATR 72-600 (RAM Express)"
+ ],
+ "020110": [
+  "CN-RGO",
+  "E190",
+  "00",
+  "EMBRAER ERJ-190-100"
+ ],
+ "020111": [
+  "CN-RGP",
+  "E190",
+  "00",
+  "EMBRAER ERJ-190-100"
+ ],
+ "020112": [
+  "CN-RGQ",
+  "E190",
+  "00",
+  "EMBRAER ERJ-190-100"
+ ],
+ "020113": [
+  "CN-RGR",
+  "E190",
+  "00",
+  "EMBRAER ERJ-190-100"
+ ],
+ "020121": [
+  "CN-RGS",
+  "B788",
+  "00",
+  "BOEING 787-8 Dreamliner"
+ ],
+ "020122": [
+  "CN-RGT",
+  "B788",
+  "00",
+  "BOEING 787-8 Dreamliner"
+ ],
+ "020123": [
+  "CN-RGU",
+  "B788",
+  "00",
+  "BOEING 787-8 Dreamliner"
+ ],
+ "02012C": [
+  "CN-RGV",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "020139": [
+  "CN-MAX",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "02013A": [
+  "CN-MAY",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "02013C": [
+  "CN-RAM",
+  "B789",
+  "00",
+  "BOEING 787-9 Dreamliner"
+ ],
+ "02013D": [
+  "CN-RGX",
+  "B789",
+  "00",
+  "BOEING 787-9 Dreamliner"
+ ],
+ "02013E": [
+  "CN-RGZ",
+  "B789",
+  "00",
+  "BOEING 787-9 Dreamliner"
+ ],
+ "02013F": [
+  "CN-RGY",
+  "B789",
+  "00",
+  "BOEING 787-9 Dreamliner"
+ ],
+ "020142": [
+  "CN-COJ",
+  "AT76",
+  "00",
+  "ATR 72-600 (RAM Express)"
+ ],
+ "02019B": [
+  "CN-RGW",
+  "B738",
+  "00",
+  "BOEING 737-800"
+ ],
+ "02019F": [
+  "CN-RHD",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201A0": [
+  "CN-RHF",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201A1": [
+  "CN-RHC",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201A2": [
+  "CN-RHE",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201A3": [
+  "CN-RHA",
+  "B789",
+  "00",
+  "BOEING 787-9 Dreamliner"
+ ],
+ "0201A4": [
+  "CN-RHB",
+  "B789",
+  "00",
+  "BOEING 787-9 Dreamliner"
+ ],
+ "0201B5": [
+  "CN-RHG",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201B6": [
+  "CN-RHH",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201C0": [
+  "CN-RHI",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201C1": [
+  "CN-RHJ",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201C2": [
+  "CN-RHK",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201C3": [
+  "CN-RHL",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201C4": [
+  "CN-RHM",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201C5": [
+  "CN-RHN",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201CD": [
+  "CN-RHU",
+  "B788",
+  "00",
+  "BOEING 787-8 Dreamliner"
+ ],
+ "0201CE": [
+  "CN-RHV",
+  "B788",
+  "00",
+  "BOEING 787-8 Dreamliner"
+ ],
+ "0201D1": [
+  "CN-RHO",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201D2": [
+  "CN-RHP",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201D3": [
+  "CN-RHQ",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201D4": [
+  "CN-RHR",
+  "B38M",
+  "00",
+  "BOEING 737 MAX 8"
+ ],
+ "0201D5": [
+  "CN-RHS",
+  "B38M",
+  "00",
+  null
+ ]
 }
