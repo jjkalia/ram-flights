@@ -1,0 +1,25 @@
+# Calcul gratuit des distances pour tous les vols (répare aussi les
+# valeurs corrompues). NOUVEAU fichier : .github/workflows/distances.yml
+
+name: Calculer les distances (gratuit)
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  dist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 1 }
+      - run: python3 distances.py
+      - name: Enregistrer dans le dépôt
+        run: |
+          git config user.name  "robot"
+          git config user.email "robot@users.noreply.github.com"
+          git add ram_flights.json
+          git diff --cached --quiet && echo "Rien de nouveau" || \
+            git commit -m "Distances orthodromiques calculées"
+          git push
