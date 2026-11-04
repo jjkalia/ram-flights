@@ -3,8 +3,10 @@
 Calcul GRATUIT des distances pour TOUS les vols du fichier :
 distance orthodromique (grand cercle) entre aéroports de départ et
 d'arrivée — ou entre premiers/derniers points captés pour les vols ADSB.
-Répare au passage les valeurs corrompues de l'épisode FR24 (division
-par 1000 erronée). Zéro crédit, zéro API : juste des maths.
+Zéro crédit, zéro API : juste des maths.
+
+v2 : la table des aéroports tar1090 a déménagé (db/ -> racine du dépôt) ;
+le script essaie les deux adresses.
 
 Usage : python3 distances.py   (aucun argument)
 """
@@ -13,8 +15,10 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 OUT = HERE / "ram_flights.json"
-AIRPORTS_URL = ("https://raw.githubusercontent.com/wiedehopf/tar1090-db/"
-                "master/airport-coords.json")
+AIRPORTS_URLS = (
+    "https://raw.githubusercontent.com/wiedehopf/tar1090-db/master/airport-coords.json",
+    "https://raw.githubusercontent.com/wiedehopf/tar1090-db/master/db/airport-coords.json",
+)
 
 
 def gc_km(lat1, lon1, lat2, lon2):
@@ -28,8 +32,16 @@ def gc_km(lat1, lon1, lat2, lon2):
 
 def main():
     print("Téléchargement de la table des aéroports…", flush=True)
-    raw = json.load(urllib.request.urlopen(AIRPORTS_URL, timeout=60))
-    # format: {"GMMN": [lat, lon, ...], ...} — on normalise
+    raw = None
+    for url in AIRPORTS_URLS:
+        try:
+            raw = json.load(urllib.request.urlopen(url, timeout=60))
+            break
+        except Exception as e:
+            print(f"  (adresse {url.rsplit('/', 1)[-1]} via "
+                  f"{url.split('/')[-2]}: {e})", flush=True)
+    if raw is None:
+        raise SystemExit("Table des aéroports introuvable aux deux adresses.")
     apt = {}
     for k, v in raw.items():
         if isinstance(v, (list, tuple)) and len(v) >= 2:
@@ -44,7 +56,7 @@ def main():
         for cs, v in flights.items():
             if cs.startswith("_"):
                 continue
-            v.pop("dist_km", None)          # purge des valeurs corrompues
+            v.pop("dist_km", None)          # purge d'anciennes valeurs
             coords = None
             d_apt = (v.get("dep_apt") or "").upper()
             a_apt = (v.get("arr_apt") or "").upper()
